@@ -17,6 +17,7 @@ import PostAddIcon from "@mui/icons-material/PostAdd"
 import Snackbar from "@mui/material/Snackbar"
 import MuiAlert from "@mui/material/Alert"
 import Image from "next/image"
+import Header from "../components/Header"
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
 })
@@ -30,6 +31,7 @@ export default function HeroCentered() {
   })
   const uploadButtonRef = useRef()
   const [type, setType] = useState("Create")
+  const lazyRoot = useRef(null)
   const handleChoseFile = (type) => () => {
     uploadButtonRef.current.click()
     setType(type)
@@ -70,7 +72,8 @@ export default function HeroCentered() {
   }
 
   return (
-    <Box component="section">
+    <Box sx={{ maxHeight: "95vh" }}>
+      <Header />
       <Snackbar
         open={openToast}
         autoHideDuration={6000}
@@ -84,14 +87,13 @@ export default function HeroCentered() {
           {notification.content}
         </Alert>
       </Snackbar>
-      <Container sx={{ py: 10 }} maxWidth="lg">
+      <Container sx={{ my: 2 }}>
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            maxWidth: 480,
             mx: "auto",
           }}
         >
@@ -134,7 +136,9 @@ export default function HeroCentered() {
               Create
             </Button>
           </Stack>
-          <Image alt="hero" src={HeroImage} />
+          <Box ref={lazyRoot} sx={{ width: "80%" }}>
+            <Image alt="hero" src={HeroImage} layout="responsive" priority />
+          </Box>
         </Box>
       </Container>
       <Dialog
