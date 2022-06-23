@@ -1,21 +1,44 @@
-import { Box, Badge, IconButton } from "@mui/material"
 import Header from "../components/Header"
+import PropTypes from "prop-types"
 import { useEffect, useState } from "react"
-import { DataGrid, GridColDef, GridRenderCellParams } from "@mui/x-data-grid"
-import { ListItem, ListItemText, ListItemAvatar, Avatar } from "@mui/material"
+import { write, utils } from "xlsx"
+import SheetsModal from "../components/SheetsModals"
+import { useRouter } from "next/router"
+import {
+  DataGrid,
+  GridToolbarContainer,
+  GridToolbarExportContainer,
+  GridCsvExportMenuItem,
+  useGridApiContext,
+  gridFilteredSortedRowIdsSelector,
+  gridVisibleColumnFieldsSelector,
+  GridPrintExportMenuItem,
+} from "@mui/x-data-grid"
+import {
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Box,
+  Badge,
+  IconButton,
+  Typography,
+} from "@mui/material"
 import { Devices as DevicesIcon } from "@mui/icons-material"
 import { blue } from "@mui/material/colors"
-import LinearProgress from "@mui/material"
+import { LinearProgress, MenuItem } from "@mui/material"
 import { Movie } from "@mui/icons-material"
 import LiveTvIcon from "@mui/icons-material/LiveTv"
+import ListAltIcon from "@mui/icons-material/ListAlt"
+import { Download as DownloadIcon } from "@mui/icons-material"
+import quotes from "../assets/quotes"
+import Link from "next/link"
 
 const columns = [
   {
-    field: "Characters",
+    field: "name",
     headerName: "Characters",
-    minWidth: 500,
-    maxWidth: 600,
-    editable: false,
+    minWidth: 300,
     renderCell: (params) => (
       <ListItem>
         <ListItemAvatar>
@@ -30,8 +53,27 @@ const columns = [
             }}
           ></Avatar>
         </ListItemAvatar>
-        <ListItemText primary={params.row.name} secondary={"Disney"} />
+        <Link
+          href={`listes/${params.row.name
+            .replace(" ", "+")
+            .replace(".", "")}?disney_id=${params.row.id}`}
+        >
+          <ListItemText
+            primary={params.row.name}
+            secondary={params.row.from}
+            sx={{ cursor: "pointer" }}
+          />
+        </Link>
       </ListItem>
+    ),
+  },
+  {
+    field: "text",
+    headerName: "Message",
+    flex: 10,
+    minWidth: 100,
+    renderCell: (params) => (
+      <Typography variant="body2">{params.row.text}</Typography>
     ),
   },
   {
@@ -39,17 +81,16 @@ const columns = [
     headerName: "Films",
     width: 80,
     renderCell: (params) => (
-      <Badge badgeContent={params.films}>
+      <Badge badgeContent={params.row.films} color="primary">
         <Movie />
       </Badge>
     ),
   },
   {
-    field: "tvshows",
+    field: "tv",
     headerName: "TvShows",
-    width: 80,
     renderCell: (params) => (
-      <Badge badgeContent={params.tv}>
+      <Badge badgeContent={params.row.tv} color="secondary">
         <LiveTvIcon />
       </Badge>
     ),
@@ -57,32 +98,137 @@ const columns = [
   {
     field: "actions",
     headerName: "Actions",
-    width: 80,
-    alignSelf: "end",
+    width: 100,
+
     renderCell: (params) => (
       <>
-        <IconButton></IconButton>
+        <IconButton onClick={params.row.showTableModal(params.row)}>
+          <ListAltIcon color="primary" />
+        </IconButton>
+        <IconButton onClick={params.row.downloadRow(params.row)}>
+          <DownloadIcon color="success" />
+        </IconButton>
       </>
     ),
   },
 ]
 
+const getArrayOfData = (apiRef) => {
+  const filteredSortedRowIds = gridFilteredSortedRowIdsSelector(apiRef)
+  const visibleColumnsField = gridVisibleColumnFieldsSelector(apiRef)
+  const data = filteredSortedRowIds.map((id) => {
+    const row = {}
+    visibleColumnsField.forEach((field) => {
+      row[field] = apiRef.current.getCellParams(id, field).value
+    })
+    return row
+  })
+
+  return data
+}
+
+const exportBlob = (blob, filename) => {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url)
+  })
+}
+
+const JsonExportMenuItem = (props) => {
+  const apiRef = useGridApiContext()
+  const { hideMenu } = props
+  return (
+    <MenuItem
+      onClick={() => {
+        const listOfdata = getArrayOfData(apiRef)
+        const workSave = utils.json_to_sheet(listOfdata)
+        const workBook = { Sheets: { data: workSave }, SheetNames: ["data"] }
+        const excelBuffer = write(workBook, { bookType: "xlsx", type: "array" })
+        const data = new Blob([excelBuffer], {
+          type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+        })
+        exportBlob(data, `Economie.xlsx`)
+        hideMenu?.()
+      }}
+    >
+      Download as XLSX
+    </MenuItem>
+  )
+}
+
+JsonExportMenuItem.propTypes = {
+  hideMenu: PropTypes.func,
+}
+
+const csvOptions = { delimiter: ";" }
+
+const CustomExportButton = (props) => (
+  <GridToolbarExportContainer {...props}>
+    <JsonExportMenuItem />
+    <GridCsvExportMenuItem options={csvOptions} />
+    <GridPrintExportMenuItem />
+  </GridToolbarExportContainer>
+)
+
+const CustomToolbar = (props) => (
+  <GridToolbarContainer {...props}>
+    <CustomExportButton />
+  </GridToolbarContainer>
+)
+
 function Listes() {
+  const Router = useRouter()
   const [characters, setCharacters] = useState([])
   const [datagridIsLoading, setDatagridIsLoading] = useState(true)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [watchedDisney, setWatchedDiesney] = useState({
+    name: null,
+    id: null,
+    message: null,
+  })
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSize] = useState(50)
+  const [open, setOpen] = useState(false)
+  const showTableModal = (disney) => () => {
+    Router.push(
+      {
+        pathname: "/listes",
+        query: {
+          title: disney.name.replace(" ", "+").replace(".", ""),
+          disney_id: disney.id,
+        },
+      },
+      undefined,
+      { shallow: true }
+    )
+    setWatchedDiesney(disney)
+    setOpen(true)
+  }
+
+  const downloadRow = (rowId) => () => {
+    console.log(rowId)
+  }
 
   useEffect(() => {
-    if (characters.length !== 0 && page === 1) {
-      return
-    }
     const disneyRequest = async () => {
       const disneyCharactereList = await fetch(
-        `http://localhost:8000/listes?pagination=${page}`
+        `http://localhost:8000/listes?pagination=${page + 1}`
       )
+      if (disneyRequest.ok) {
+        setDatagridIsLoading(false)
+      } else {
+        setDatagridIsLoading(false)
+      }
       const response = await disneyCharactereList.json()
-      const res = response.map((disney) => {
+      const res = response.map((disney, index) => {
+        let idx = page * 50 + index
+        if (idx > 325) {
+          idx -= 325
+        }
         return {
           id: disney._id,
           imageUrl: disney.imageUrl,
@@ -90,21 +236,38 @@ function Listes() {
           films: disney.films.length,
           short: disney.shortFilms.length,
           tv: disney.tvShows.length,
+          from: quotes[idx].from,
+          text: quotes[idx].text,
+          showTableModal,
+          downloadRow,
         }
       })
 
       setCharacters(res)
-      setDatagridIsLoading(false)
     }
     disneyRequest()
-  }, [page, characters])
+  }, [page])
+
+  const handlePageChange = (newPage) => {
+    setDatagridIsLoading(true)
+    setPage(newPage)
+  }
   return (
     <>
       <Header />
       <Box width="90%" height="90vh" margin="auto">
         <DataGrid
+          onCellDoubleClick={(params, event) => {
+            if (!event.ctrlKey) {
+              event.defaultMuiPrevented = true
+            }
+            console.log(params)
+          }}
+          page={page}
+          display="flex"
           components={{
             LoadingOverlay: LinearProgress,
+            Toolbar: CustomToolbar,
           }}
           loading={datagridIsLoading}
           sx={{ mt: 2 }}
@@ -114,11 +277,20 @@ function Listes() {
           onPageSizeChange={(pageSize) => {
             setPageSize(pageSize)
           }}
+          onPageChange={handlePageChange}
           headerHeight={40}
-          rowsPerPageOptions={[10, 20, 50, 100]}
+          rowsPerPageOptions={[50]}
           disableSelectionOnClick
+          paginationMode="server"
+          rowCount={1000}
+          pagination
         />
       </Box>
+      <SheetsModal
+        open={open}
+        resources={watchedDisney}
+        handleClose={() => setOpen(false)}
+      />
     </>
   )
 }

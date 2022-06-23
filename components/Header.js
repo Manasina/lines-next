@@ -38,13 +38,16 @@ export default function HeaderUnauthenticated() {
       </Box>
       <Divider />
       <List>
-        {pages.map((page, index) => (
-          <Link href={page.link} key={index}>
-            <ListItem button>
-              <ListItemText primary={page.title} />
-            </ListItem>
-          </Link>
-        ))}
+        <Link href="/">
+          <ListItem button>
+            <ListItemText primary="Uploads" />
+          </ListItem>
+        </Link>
+        <Link href="/listes">
+          <ListItem button>
+            <ListItemText primary="Listes" />
+          </ListItem>
+        </Link>
       </List>
       <Divider />
       <List>
@@ -79,15 +82,20 @@ export default function HeaderUnauthenticated() {
               ECONOMIE
             </Typography>
             <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-              {pages.map((page, index) => (
-                <Link href={page.link} key={index}>
-                  <Button
-                    sx={{ my: 2, color: "text.secondary", display: "block" }}
-                  >
-                    {page.title}
-                  </Button>
-                </Link>
-              ))}
+              <Link href="/">
+                <Button
+                  sx={{ my: 2, color: "text.secondary", display: "block" }}
+                >
+                  Uploads
+                </Button>
+              </Link>
+              <Link href="/listes">
+                <Button
+                  sx={{ my: 2, color: "text.secondary", display: "block" }}
+                >
+                  Listes
+                </Button>
+              </Link>
             </Box>
             <Stack
               direction="row"
