@@ -18,6 +18,8 @@ import Snackbar from "@mui/material/Snackbar"
 import MuiAlert from "@mui/material/Alert"
 import Image from "next/image"
 import Header from "../components/Header"
+import { Upload } from "@mui/icons-material"
+import FilesDragAndDrop from "../components/FilesDragAndDrop"
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
 })
@@ -118,23 +120,16 @@ export default function HeroCentered() {
             ref={uploadButtonRef}
             onChange={handleFileChange}
           ></input>
-          <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-            <Button
-              size="large"
-              variant="outlined"
-              endIcon={<UpdateIcon />}
-              onClick={handleChoseFile("update")}
-            >
-              Update
-            </Button>
+          <Stack direction="column" spacing={2} sx={{ mt: 2 }}>
             <Button
               size="large"
               variant="contained"
-              endIcon={<NoteAddIcon />}
-              onClick={handleChoseFile("create")}
+              endIcon={<Upload />}
+              onClick={handleChoseFile("upload")}
             >
-              Create
+              Upload
             </Button>
+            <FilesDragAndDrop />
           </Stack>
           <Box ref={lazyRoot} sx={{ width: "80%" }}>
             <Image alt="hero" src={HeroImage} layout="responsive" priority />

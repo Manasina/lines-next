@@ -1,9 +1,11 @@
 import Header from "../components/Header"
 import PropTypes from "prop-types"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { write, utils } from "xlsx"
 import SheetsModal from "../components/SheetsModals"
 import { useRouter } from "next/router"
+import { useTheme } from "@mui/material/styles"
+
 import {
   DataGrid,
   GridToolbarContainer,
@@ -24,7 +26,6 @@ import {
   IconButton,
   Typography,
 } from "@mui/material"
-import { Devices as DevicesIcon } from "@mui/icons-material"
 import { blue } from "@mui/material/colors"
 import { LinearProgress, MenuItem } from "@mui/material"
 import { Movie } from "@mui/icons-material"
@@ -32,8 +33,7 @@ import LiveTvIcon from "@mui/icons-material/LiveTv"
 import ListAltIcon from "@mui/icons-material/ListAlt"
 import { Download as DownloadIcon } from "@mui/icons-material"
 import quotes from "../assets/quotes"
-import Link from "next/link"
-
+import useMediaQuery from "@mui/material/useMediaQuery"
 const columns = [
   {
     field: "name",
@@ -53,17 +53,11 @@ const columns = [
             }}
           ></Avatar>
         </ListItemAvatar>
-        <Link
-          href={`listes/${params.row.name
-            .replace(" ", "+")
-            .replace(".", "")}?disney_id=${params.row.id}`}
-        >
-          <ListItemText
-            primary={params.row.name}
-            secondary={params.row.from}
-            sx={{ cursor: "pointer" }}
-          />
-        </Link>
+        <ListItemText
+          primary={params.row.name}
+          secondary={params.row.from}
+          sx={{ cursor: "pointer" }}
+        />
       </ListItem>
     ),
   },
@@ -183,6 +177,8 @@ const CustomToolbar = (props) => (
 
 function Listes() {
   const Router = useRouter()
+  const theme = useTheme()
+  const fullScreen = useMediaQuery(theme.breakpoints.down("md"))
   const [characters, setCharacters] = useState([])
   const [datagridIsLoading, setDatagridIsLoading] = useState(true)
   const [watchedDisney, setWatchedDiesney] = useState({
@@ -193,26 +189,28 @@ function Listes() {
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(50)
   const [open, setOpen] = useState(false)
-  const showTableModal = (disney) => () => {
-    Router.push(
-      {
-        pathname: "/listes",
-        query: {
-          title: disney.name.replace(" ", "+").replace(".", ""),
-          disney_id: disney.id,
+  const showTableModal = useCallback(
+    (disney) => () => {
+      Router.push(
+        {
+          pathname: "/listes",
+          query: {
+            title: disney.name.replace(" ", "+").replace(".", ""),
+            disney_id: disney.id,
+          },
         },
-      },
-      undefined,
-      { shallow: true }
-    )
-    setWatchedDiesney(disney)
-    setOpen(true)
-  }
+        undefined,
+        { shallow: true }
+      )
+      setWatchedDiesney(disney)
+      setOpen(true)
+    },
+    [Router]
+  )
 
   const downloadRow = (rowId) => () => {
     console.log(rowId)
   }
-
   useEffect(() => {
     const disneyRequest = async () => {
       const disneyCharactereList = await fetch(
@@ -246,7 +244,7 @@ function Listes() {
       setCharacters(res)
     }
     disneyRequest()
-  }, [page])
+  }, [page, showTableModal])
 
   const handlePageChange = (newPage) => {
     setDatagridIsLoading(true)
@@ -261,7 +259,7 @@ function Listes() {
             if (!event.ctrlKey) {
               event.defaultMuiPrevented = true
             }
-            console.log(params)
+            showTableModal(params)
           }}
           page={page}
           display="flex"
@@ -283,13 +281,23 @@ function Listes() {
           disableSelectionOnClick
           paginationMode="server"
           rowCount={1000}
+          getRowHeight={() => (fullScreen ? 60 : "auto")}
           pagination
         />
       </Box>
       <SheetsModal
         open={open}
         resources={watchedDisney}
-        handleClose={() => setOpen(false)}
+        handleClose={() => {
+          Router.push(
+            {
+              pathname: "/listes",
+            },
+            undefined,
+            { shallow: true }
+          )
+          setOpen(false)
+        }}
       />
     </>
   )

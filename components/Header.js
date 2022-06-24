@@ -15,11 +15,6 @@ import Typography from "@mui/material/Typography"
 import Link from "next/link"
 import { useState } from "react"
 
-const pages = [
-  { title: "Uploads", link: "/" },
-  { title: "Listes", link: "/listes" },
-]
-
 const drawerWidth = 240
 
 export default function HeaderUnauthenticated() {
@@ -51,12 +46,16 @@ export default function HeaderUnauthenticated() {
       </List>
       <Divider />
       <List>
-        <ListItem button>
-          <ListItemText primary="Register" />
-        </ListItem>
-        <ListItem button>
-          <ListItemText primary="Login" />
-        </ListItem>
+        <Link href="auth/register">
+          <ListItem button>
+            <ListItemText primary="Register" />
+          </ListItem>
+        </Link>
+        <Link href="auth/login">
+          <ListItem button>
+            <ListItemText primary="Login" />
+          </ListItem>
+        </Link>
       </List>
     </Box>
   )
