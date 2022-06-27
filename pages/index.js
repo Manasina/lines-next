@@ -1,54 +1,89 @@
 import Box from "@mui/material/Box"
+import Paper from "@mui/material/Paper"
 import Button from "@mui/material/Button"
 import Container from "@mui/material/Container"
 import Stack from "@mui/material/Stack"
 import Typography from "@mui/material/Typography"
 import HeroImage from "../assets/report.svg"
-import NoteAddIcon from "@mui/icons-material/NoteAdd"
-import UpdateIcon from "@mui/icons-material/Update"
-import { useState, useRef, forwardRef } from "react"
-import Avatar from "@mui/material/Avatar"
-import Dialog from "@mui/material/Dialog"
-import DialogActions from "@mui/material/DialogActions"
-import DialogContent from "@mui/material/DialogContent"
-import DialogContentText from "@mui/material/DialogContentText"
-import DialogTitle from "@mui/material/DialogTitle"
-import PostAddIcon from "@mui/icons-material/PostAdd"
-import Snackbar from "@mui/material/Snackbar"
-import MuiAlert from "@mui/material/Alert"
+import { useState, useRef, forwardRef, useEffect } from "react"
 import Image from "next/image"
 import Header from "../components/Header"
 import { Upload } from "@mui/icons-material"
 import FilesDragAndDrop from "../components/FilesDragAndDrop"
-const Alert = forwardRef(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
-})
-
+import AreYouSure from "../components/AreYouSure"
+import Notification from "../components/Notification"
+import { utils, read } from "xlsx"
+import colums from "../func/colums-uploaded"
+import { v4 } from "uuid"
+import { ShowChart } from "@mui/icons-material"
+import { IconButton } from "@mui/material"
+import PreviewFileModal from "../components/previewFileModal"
 export default function HeroCentered() {
   const [file, setFile] = useState(null)
+  const [excelToArray, setExcelToArray] = useState([])
+  const [thereIsAfile, setThereIsAfile] = useState(false)
   const [openToast, setOpenToast] = useState(false)
   const [notification, setNotification] = useState({
     severity: "success",
     content: "message",
   })
   const uploadButtonRef = useRef()
-  const [type, setType] = useState("Create")
-  const lazyRoot = useRef(null)
+  // const [open, setOpen] = useState(false)
+  // const [type, setType] = useState("Create")
+
+  useEffect(() => {
+    if (file === null) {
+      setThereIsAfile(false)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const data = e.target.result
+      const workbook = read(data, { type: "array" })
+      const sheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[sheetName]
+      const json = utils.sheet_to_json(worksheet)
+      setExcelToArray(
+        json.map((js) => {
+          return {
+            ...js,
+            id: v4(),
+          }
+        })
+      )
+      setThereIsAfile(true)
+    }
+    reader.readAsArrayBuffer(file)
+  }, [file])
   const handleChoseFile = (type) => () => {
     uploadButtonRef.current.click()
-    setType(type)
-    setTimeout(() => setOpen(true), 2000)
+    // setType(type)
+    // setTimeout(() => setOpen(true), 2000)
   }
-
   const handleFileChange = (event) => {
+    if (!event.target.files[0].name.endsWith(".xlsx")) {
+      setOpenToast(true)
+      setNotification({
+        severity: "error",
+        content: "File should be xlsx",
+      })
+      return
+    }
     setFile(event.target.files[0])
   }
-
-  const [open, setOpen] = useState(false)
-
-  const handleClose = () => {
-    setOpen(false)
+  const onUpload = (file) => {
+    if (!file.name.endsWith(".xlsx")) {
+      setOpenToast(true)
+      setNotification({
+        severity: "error",
+        content: "File should be xlsx",
+      })
+      return
+    }
+    setFile(file)
   }
+  /*
+  const handleClose = () => setOpen(false)
   const postFile = async () => {
     if (file === null || file === undefined) {
       setOpenToast(true)
@@ -70,115 +105,106 @@ export default function HeroCentered() {
       severity: "success",
       content: res.Result,
     })
-    console.log(res)
+
   }
-
+  */
+  const clearFile = () => {
+    setThereIsAfile(false)
+  }
+  const handleShowCurrent = () => {
+    if (file !== null) {
+      setThereIsAfile(true)
+    } else {
+      setOpenToast(true)
+      setNotification({
+        severity: "error",
+        content: "No uploaded yet",
+      })
+    }
+  }
   return (
-    <Box sx={{ maxHeight: "95vh" }}>
+    <Box sx={{ maxHeight: "97vh", overflow: "hidden" }}>
       <Header />
-      <Snackbar
-        open={openToast}
-        autoHideDuration={6000}
-        onClose={() => setOpenToast(false)}
+      {thereIsAfile && (
+        <PreviewFileModal
+          open={thereIsAfile}
+          clearFile={clearFile}
+          rows={excelToArray}
+          columns={colums(excelToArray[0])}
+          filename={file.name}
+        />
+      )}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
+          mx: "auto",
+          py: 2,
+          overflow: "hidden",
+        }}
       >
-        <Alert
-          onClose={() => setOpenToast(false)}
-          severity={notification.severity}
-          sx={{ width: "100%" }}
-        >
-          {notification.content}
-        </Alert>
-      </Snackbar>
-      <Container sx={{ my: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-            mx: "auto",
-          }}
-        >
-          <Typography variant="h3" component="h1">
-            Upload XLSX here
-          </Typography>
+        <Typography variant="h3" component="h1">
+          Upload XLSX here
+        </Typography>
 
-          <Typography
-            color="text.secondary"
-            variant="subtitle1"
-            component="div"
-            sx={{ mt: 2 }}
-          >
-            Update or create new file in the database. her you upload file to
-            create a new table or update xlsx.
-          </Typography>
-          <input
-            type="file"
-            id="avatar"
-            name="avatar"
-            accept=".xlsx"
-            ref={uploadButtonRef}
-            onChange={handleFileChange}
-          ></input>
-          <Stack direction="column" spacing={2} sx={{ mt: 2 }}>
-            <Button
-              size="large"
-              variant="contained"
-              endIcon={<Upload />}
-              onClick={handleChoseFile("upload")}
-            >
-              Upload
-            </Button>
-            <FilesDragAndDrop />
-          </Stack>
-          <Box ref={lazyRoot} sx={{ width: "80%" }}>
-            <Image alt="hero" src={HeroImage} layout="responsive" priority />
-          </Box>
-        </Box>
-      </Container>
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="dialog-title"
-        aria-describedby="dialog-description"
-        maxWidth="xs"
-      >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            textAlign: "center",
-          }}
+        <Typography
+          color="text.secondary"
+          variant="subtitle1"
+          component="div"
+          sx={{ mt: 2 }}
         >
-          <Avatar sx={{ mt: 3 }}>
-            <PostAddIcon />
-          </Avatar>
-          <DialogTitle id="dialog-title">
-            {file === null ? ".xlsx" : file.name}
-          </DialogTitle>
-          <DialogContent>
-            <DialogContentText id="dialog-description">
-              this action will {type} the content of the database so be careful
-              of what you are doing. click on {type} when you know what you are
-              doing
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button autoFocus onClick={handleClose} sx={{ color: "GrayText" }}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                handleClose()
-                postFile()
-              }}
-            >
-              {type}
-            </Button>
-          </DialogActions>
-        </Box>
-      </Dialog>
+          Update or create new file in t he database. her you upload file to
+          create a new table or update xlsx.
+        </Typography>
+        <input
+          type="file"
+          id="avatar"
+          name="avatar"
+          accept=".xlsx"
+          ref={uploadButtonRef}
+          onChange={handleFileChange}
+        ></input>
+        <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+          <Button
+            size="large"
+            variant="contained"
+            endIcon={<Upload />}
+            onClick={handleChoseFile("upload")}
+          >
+            Upload
+          </Button>
+          <IconButton onClick={handleShowCurrent}>
+            <ShowChart />
+          </IconButton>
+        </Stack>
+        <FilesDragAndDrop onUpload={onUpload} />
+        <Paper
+          sx={{
+            width: "80%",
+            flexGrow: 1,
+            maxHeight: 500,
+            minHeight: 150,
+            position: "relative",
+          }}
+          elevation={1}
+        >
+          <Image alt="hero" src={HeroImage} layout="responsive" priority />
+        </Paper>
+      </Box>
+      {/* <AreYouSure
+        open={open}
+        handleClose={handleClose}
+        type={type}
+        file={file}
+        postFile={postFile}
+      /> */}
+      <Notification
+        openToast={openToast}
+        setOpenToast={setOpenToast}
+        notification={notification}
+      />
     </Box>
   )
 }

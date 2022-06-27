@@ -5,7 +5,6 @@ import { write, utils } from "xlsx"
 import SheetsModal from "../components/SheetsModals"
 import { useRouter } from "next/router"
 import { useTheme } from "@mui/material/styles"
-
 import {
   DataGrid,
   GridToolbarContainer,
@@ -45,6 +44,7 @@ const columns = [
           <Avatar
             alt={params.row.name}
             src={params.row.imageUrl}
+            b
             sx={{
               width: 35,
               height: 35,
