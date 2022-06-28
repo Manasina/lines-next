@@ -4,11 +4,11 @@ import { forwardRef } from "react"
 const Alert = forwardRef(function Alert(props, ref) {
   return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
 })
-function Notification({ openToast, setOpenToast, notification }) {
+function Notification({ openToast, setOpenToast, notification, duration }) {
   return (
     <Snackbar
       open={openToast}
-      autoHideDuration={6000}
+      autoHideDuration={duration ? duration : 6000}
       onClose={() => setOpenToast(false)}
     >
       <Alert

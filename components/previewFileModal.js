@@ -6,23 +6,34 @@ import IconButton from "@mui/material/IconButton"
 import Typography from "@mui/material/Typography"
 import CloseIcon from "@mui/icons-material/Close"
 import Slide from "@mui/material/Slide"
-import { forwardRef } from "react"
+import { forwardRef, useContext } from "react"
 import { DataGrid } from "@mui/x-data-grid"
 import { Box } from "@mui/material"
 import { Check } from "@mui/icons-material"
+import { useRouter } from "next/router"
+import FileContext, { FileContextProvider } from "../store/FileContext"
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />
 })
-function PreviewFileModal({ open, clearFile, rows, columns, filename }) {
-  const sendEditidedFile = async () => {
-    clearFile()
+function PreviewFileModal({ open, closePreview, rows, columns, filename }) {
+  const { handleAddListData } = useContext(FileContext)
+  const Router = useRouter()
+  const ConfirmHandler = async () => {
+    handleAddListData(rows)
+    Router.push({
+      pathname: "confirmed",
+      query: {
+        title: filename,
+        length: rows.length,
+      },
+    })
   }
   return (
     <Dialog
       fullScreen
       open={open}
-      onClose={clearFile}
+      onClose={closePreview}
       TransitionComponent={Transition}
     >
       <AppBar sx={{ position: "relative" }}>
@@ -30,8 +41,9 @@ function PreviewFileModal({ open, clearFile, rows, columns, filename }) {
           <IconButton
             edge="start"
             color="inherit"
-            onClick={clearFile}
+            onClick={closePreview}
             aria-label="close"
+            variant=""
           >
             <CloseIcon />
           </IconButton>
@@ -42,7 +54,7 @@ function PreviewFileModal({ open, clearFile, rows, columns, filename }) {
           <Button
             autoFocus
             color="inherit"
-            onClick={sendEditidedFile}
+            onClick={ConfirmHandler}
             variant="outlined"
             endIcon={<Check />}
             sx={{ ml: 2 }}

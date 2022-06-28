@@ -8,16 +8,16 @@ import HeroImage from "../assets/report.svg"
 import { useState, useRef, forwardRef, useEffect } from "react"
 import Image from "next/image"
 import Header from "../components/Header"
-import { Upload } from "@mui/icons-material"
+import { ArrowUpward, Upload } from "@mui/icons-material"
 import FilesDragAndDrop from "../components/FilesDragAndDrop"
-import AreYouSure from "../components/AreYouSure"
+import Fab from "@mui/material/Fab"
+// import AreYouSure from "../components/AreYouSure"
 import Notification from "../components/Notification"
 import { utils, read } from "xlsx"
 import colums from "../func/colums-uploaded"
 import { v4 } from "uuid"
-import { ShowChart } from "@mui/icons-material"
-import { IconButton } from "@mui/material"
 import PreviewFileModal from "../components/previewFileModal"
+import { grey } from "@mui/material/colors"
 export default function HeroCentered() {
   const [file, setFile] = useState(null)
   const [excelToArray, setExcelToArray] = useState([])
@@ -56,6 +56,7 @@ export default function HeroCentered() {
     reader.readAsArrayBuffer(file)
   }, [file])
   const handleChoseFile = (type) => () => {
+    console.log("Why aint it click?")
     uploadButtonRef.current.click()
     // setType(type)
     // setTimeout(() => setOpen(true), 2000)
@@ -108,7 +109,7 @@ export default function HeroCentered() {
 
   }
   */
-  const clearFile = () => {
+  const closePreviewHandler = () => {
     setThereIsAfile(false)
   }
   const handleShowCurrent = () => {
@@ -122,13 +123,14 @@ export default function HeroCentered() {
       })
     }
   }
+
   return (
-    <Box sx={{ maxHeight: "97vh", overflow: "hidden" }}>
+    <>
       <Header />
       {thereIsAfile && (
         <PreviewFileModal
           open={thereIsAfile}
-          clearFile={clearFile}
+          closePreview={closePreviewHandler}
           rows={excelToArray}
           columns={colums(excelToArray[0])}
           filename={file.name}
@@ -175,12 +177,16 @@ export default function HeroCentered() {
           >
             Upload
           </Button>
-          <IconButton onClick={handleShowCurrent}>
-            <ShowChart />
-          </IconButton>
+          <Fab
+            color="secondary"
+            aria-label="show modal"
+            onClick={handleShowCurrent}
+          >
+            <ArrowUpward />
+          </Fab>
         </Stack>
         <FilesDragAndDrop onUpload={onUpload} />
-        <Paper
+        {/* <Paper
           sx={{
             width: "80%",
             flexGrow: 1,
@@ -191,7 +197,7 @@ export default function HeroCentered() {
           elevation={1}
         >
           <Image alt="hero" src={HeroImage} layout="responsive" priority />
-        </Paper>
+        </Paper> */}
       </Box>
       {/* <AreYouSure
         open={open}
@@ -205,6 +211,6 @@ export default function HeroCentered() {
         setOpenToast={setOpenToast}
         notification={notification}
       />
-    </Box>
+    </>
   )
 }

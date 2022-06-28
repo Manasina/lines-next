@@ -44,7 +44,6 @@ const columns = [
           <Avatar
             alt={params.row.name}
             src={params.row.imageUrl}
-            b
             sx={{
               width: 35,
               height: 35,

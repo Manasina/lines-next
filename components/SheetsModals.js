@@ -28,7 +28,6 @@ const Sheets = ({ open, resources, handleClose }) => {
     const getInfo = async () => {
       const character = await fetch(`http://localhost:8000/listes/${id}`)
       const data = await character.json()
-      // willl remove the [data] to data when it become a list instead
       for (const information of [data]) {
         for (const [key, value] of Object.entries(information)) {
           if (value.constructor === Array) {
