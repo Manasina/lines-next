@@ -10,8 +10,11 @@ export const FileContextProvider = ({ children }) => {
   const [data, setData] = useState([])
   const [xlsxKeys, setXlsxKeys] = useState([])
   const handleAddListData = (newData) => {
+    const sheetsKeys = Object.keys(newData[0])
+      .filter((dat) => dat !== "id")
+      .sort()
     setData(newData)
-    setXlsxKeys(Object.keys(newData[0]).sort())
+    setXlsxKeys(sheetsKeys)
   }
   return (
     <FileContext.Provider

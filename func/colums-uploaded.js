@@ -4,7 +4,8 @@ const columns = (column) => {
     return {
       field: key,
       headerName: key,
-      minWidth: 100,
+      minWidth: 150,
+      hide: key === "id" ? true : false,
     }
   })
 }

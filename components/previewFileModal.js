@@ -6,20 +6,23 @@ import IconButton from "@mui/material/IconButton"
 import Typography from "@mui/material/Typography"
 import CloseIcon from "@mui/icons-material/Close"
 import Slide from "@mui/material/Slide"
-import { forwardRef, useContext } from "react"
+import { forwardRef, useContext, useState } from "react"
 import { DataGrid } from "@mui/x-data-grid"
 import { Box } from "@mui/material"
 import { Check } from "@mui/icons-material"
 import { useRouter } from "next/router"
 import FileContext, { FileContextProvider } from "../store/FileContext"
+import { LoadingButton } from "@mui/lab"
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />
 })
 function PreviewFileModal({ open, closePreview, rows, columns, filename }) {
   const { handleAddListData } = useContext(FileContext)
+  const [confirming, setConfirming] = useState(false)
   const Router = useRouter()
   const ConfirmHandler = async () => {
+    setConfirming(true)
     handleAddListData(rows)
     Router.push({
       pathname: "confirmed",
@@ -51,16 +54,17 @@ function PreviewFileModal({ open, closePreview, rows, columns, filename }) {
             {filename}
           </Typography>
 
-          <Button
+          <LoadingButton
             autoFocus
             color="inherit"
             onClick={ConfirmHandler}
             variant="outlined"
             endIcon={<Check />}
             sx={{ ml: 2 }}
+            loading={confirming}
           >
             Confirm
-          </Button>
+          </LoadingButton>
         </Toolbar>
       </AppBar>
       <Box sx={{ width: "95%", height: "90vh", mx: "auto", my: 2 }}>
